@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>WhatsApp Tarzı WebSocket Chat</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #ece5dd;
+  }
+  .phone {
+    border: 2px solid #333;
+    border-radius: 20px;
+    width: 350px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background: #f0f0f0;
+  }
+  .header {
+    text-align: center;
+    font-weight: bold;
+    padding: 10px 0;
+    border-bottom: 1px solid #ccc;
+  }
+  .screen {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #e5ddd5;
+    border-radius: 10px;
+    margin: 10px 0;
+  }
+  .input-container {
+    display: flex;
+    gap: 5px;
+  }
+  input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    outline: none;
+  }
+  button {
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: none;
+    background-color: #25d366;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .message {
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 20px;
+    word-wrap: break-word;
+  }
+  .sent {
+    background-color: #dcf8c6;
+    align-self: flex-end;
+  }
+  .received {
+    background-color: #fff;
+    align-self: flex-start;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone1">
+  <div class="header">Telefon 1</div>
+  <div class="screen" id="screen1"></div>
+  <div class="input-container">
+    <input id="msg1" placeholder="Mesaj yazın..." />
+    <button onclick="sendMessage(1)">Gönder</button>
+  </div>
+</div>
+
+<div class="phone" id="phone2">
+  <div class="header">Telefon 2</div>
+  <div class="screen" id="screen2"></div>
+  <div class="input-container">
+    <input id="msg2" placeholder="Mesaj yazın..." />
+    <button onclick="sendMessage(2)">Gönder</button>
+  </div>
+</div>
+
+<script>
+// WebSocket bağlantılarını oluşturuyoruz
+// Telefon 1 için WebSocket
+const ws1 = new WebSocket('ws://localhost:8080');
+// Telefon 2 için WebSocket
+const ws2 = new WebSocket('ws://localhost:8080');
+
+// -----------------------------
+// Telefon 1 mesaj alımı
+// -----------------------------
+ws1.onmessage = (event) => {
+    // Yeni bir mesaj div'i oluşturuyoruz
+    const div = document.createElement('div');
+    // Mesajın metni, WebSocket'ten gelen veri
+    div.textContent = event.data;
+    // Gelen mesaj stili (sol tarafta, gri baloncuk)
+    div.classList.add('message', 'received');
+    // Mesajı ekranın sonuna ekliyoruz
+    document.getElementById('screen1').appendChild(div);
+    // Scroll'u en alta kaydırıyoruz, yeni mesaj görünür olsun
+    document.getElementById('screen1').scrollTop = document.getElementById('screen1').scrollHeight;
+};
+
+// -----------------------------
+// Telefon 2 mesaj alımı
+// -----------------------------
+ws2.onmessage = (event) => {
+    const div = document.createElement('div');
+    div.textContent = event.data;
+    div.classList.add('message', 'received'); // Gelen mesaj gri baloncuk
+    document.getElementById('screen2').appendChild(div);
+    document.getElementById('screen2').scrollTop = document.getElementById('screen2').scrollHeight;
+};
+
+// -----------------------------
+// Mesaj gönderme fonksiyonu
+// -----------------------------
+function sendMessage(phone) {
+    // Telefon 1 için gönderme işlemi
+    if (phone === 1) {
+        const msg = document.getElementById('msg1').value; // inputtan mesaj al
+        if(!msg) return; // boş mesaj gönderilmesini engelle
+
+        ws1.send(msg); // WebSocket üzerinden mesajı gönder
+
+        // Telefon 1'de kendi gönderdiği mesajı yeşil baloncuk olarak göster
+        const div = document.createElement('div');
+        div.textContent = msg;
+        div.classList.add('message', 'sent'); // sağ taraf, yeşil baloncuk
+        document.getElementById('screen1').appendChild(div);
+
+        // Scroll'u en alta kaydır
+        document.getElementById('screen1').scrollTop = document.getElementById('screen1').scrollHeight;
+
+        // Inputu temizle
+        document.getElementById('msg1').value = '';
+    } 
+    // Telefon 2 için gönderme işlemi
+    else {
+        const msg = document.getElementById('msg2').value;
+        if(!msg) return;
+
+        ws2.send(msg); // WebSocket üzerinden mesajı gönder
+
+        // Telefon 2'de kendi mesajını göster
+        const div = document.createElement('div');
+        div.textContent = msg;
+        div.classList.add('message', 'sent'); // sağ taraf, yeşil baloncuk
+        document.getElementById('screen2').appendChild(div);
+
+        // Scroll'u en alta kaydır
+        document.getElementById('screen2').scrollTop = document.getElementById('screen2').scrollHeight;
+
+        // Inputu temizle
+        document.getElementById('msg2').value = '';
+    }
+}
+</script>
+
+
+</body>
+</html>
